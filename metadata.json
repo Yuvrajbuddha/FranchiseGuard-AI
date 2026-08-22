@@ -1,0 +1,6 @@
+{
+  "name": "FranchiseGuard AI",
+  "description": "AI-Powered Franchise Compliance, Risk Monitoring & Standards Audit Platform with Computer Vision, Review NLP, Cross-Location Systemic Anomaly Detection, and Human-in-the-Loop Governance.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
