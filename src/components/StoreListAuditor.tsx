@@ -6,16 +6,24 @@ import {
   ChevronLeft,
   MapPin,
   Eye,
-  Sparkles
+  Sparkles,
+  Camera,
+  Video,
+  Plus
 } from 'lucide-react';
 import { FranchiseStore } from '../types/franchise';
 
 interface StoreListAuditorProps {
   stores: FranchiseStore[];
   onSelectStore: (storeNumber: number) => void;
+  onOpenMediaUpload?: (storeNumber: number) => void;
 }
 
-export const StoreListAuditor: React.FC<StoreListAuditorProps> = ({ stores, onSelectStore }) => {
+export const StoreListAuditor: React.FC<StoreListAuditorProps> = ({ 
+  stores, 
+  onSelectStore,
+  onOpenMediaUpload 
+}) => {
   const [search, setSearch] = useState<string>('');
   const [regionFilter, setRegionFilter] = useState<string>('All');
   const [riskFilter, setRiskFilter] = useState<string>('All');
@@ -54,8 +62,19 @@ export const StoreListAuditor: React.FC<StoreListAuditorProps> = ({ stores, onSe
           </p>
         </div>
 
-        <div className="text-xs font-semibold text-teal-800 bg-teal-50 px-3 py-1.5 rounded-xl border border-teal-100 shrink-0 self-start sm:self-auto">
-          {filteredStores.length} Stores Listed
+        <div className="flex items-center gap-2">
+          {onOpenMediaUpload && (
+            <button
+              onClick={() => onOpenMediaUpload(247)}
+              className="text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-xl border border-teal-200 transition-colors flex items-center gap-1.5"
+            >
+              <Camera className="w-3.5 h-3.5 text-teal-700" />
+              <span>+ Add Customer Media</span>
+            </button>
+          )}
+          <div className="text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 shrink-0">
+            {filteredStores.length} Stores Listed
+          </div>
         </div>
       </div>
 

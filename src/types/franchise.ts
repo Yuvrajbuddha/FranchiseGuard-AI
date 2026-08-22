@@ -26,17 +26,44 @@ export interface VisualViolationDetection {
   boundingBox?: { x: number; y: number; width: number; height: number }; // percentages
   evidenceDescription: string;
   standardClause: string;
+  timestampSec?: number; // For video timestamps (e.g. 00:04 in video)
 }
 
 export interface StorePhotoAudit {
   id: string;
   timestamp: string;
   imageUrl: string;
+  videoUrl?: string;
+  mediaType?: 'image' | 'video';
+  durationSec?: number;
   caption: string;
-  zone: 'Kitchen / Prep Area' | 'Dining Room' | 'Restroom' | 'Storefront / Entrance' | 'Storage / Walk-in' | 'Drive-Thru / POS';
+  zone: 'Kitchen / Prep Area' | 'Dining Room' | 'Restroom' | 'Storefront / Entrance' | 'Storage / Walk-in' | 'Drive-Thru / POS' | 'Food Quality & Plating';
   detectedViolations: VisualViolationDetection[];
   overallCleanlinessScore: number;
   aiStatus: 'analyzed' | 'flagged' | 'passed';
+  submittedBy?: string; // e.g. "Customer (Dine-in)", "Mystery Auditor", "Store Supervisor"
+  customerRating?: number; // 1 to 5 stars if submitted by customer
+  customerComment?: string;
+  orderNumber?: string;
+}
+
+export interface CustomerMediaSubmission {
+  id: string;
+  storeNumber: number;
+  storeName: string;
+  mediaType: 'image' | 'video';
+  mediaUrl: string;
+  thumbnailUrl?: string;
+  zone: 'Kitchen / Prep Area' | 'Dining Room' | 'Restroom' | 'Storefront / Entrance' | 'Storage / Walk-in' | 'Drive-Thru / POS' | 'Food Quality & Plating';
+  customerName: string;
+  customerPhone?: string;
+  orderNumber?: string;
+  rating: number;
+  feedbackText: string;
+  timestamp: string;
+  aiStatus: 'analyzed' | 'flagged' | 'passed';
+  cleanlinessScore: number;
+  violations: VisualViolationDetection[];
 }
 
 export interface CustomerReview {
@@ -142,7 +169,7 @@ export interface AuditLogEntry {
   storeNumber: number;
   actionTaken: string;
   actor: string;
-  decisionType: 'Approved' | 'Rejected' | 'Investigating' | 'Auto-Flagged';
+  decisionType: 'Approved' | 'Rejected' | 'Investigating' | 'Auto-Flagged' | 'Dismissed';
   notes: string;
   aiRecommendation: string;
 }

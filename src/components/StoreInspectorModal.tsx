@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   X, 
   ShieldAlert, 
@@ -6,6 +6,12 @@ import {
   CheckCircle2, 
   AlertOctagon, 
   Camera, 
+  Video,
+  Play,
+  Pause,
+  Film,
+  Plus,
+  Star,
   MessageSquareQuote, 
   History, 
   Activity, 
@@ -33,6 +39,7 @@ interface StoreInspectorModalProps {
   onApproveAction: (storeNumber: number, actionType: string, note?: string) => void;
   onRejectAction: (storeNumber: number, note?: string) => void;
   onInvestigateAction: (storeNumber: number, note?: string) => void;
+  onOpenMediaUpload?: (storeNumber: number) => void;
 }
 
 export const StoreInspectorModal: React.FC<StoreInspectorModalProps> = ({
@@ -41,6 +48,7 @@ export const StoreInspectorModal: React.FC<StoreInspectorModalProps> = ({
   onApproveAction,
   onRejectAction,
   onInvestigateAction,
+  onOpenMediaUpload,
 }) => {
   if (!store) return null;
 
@@ -51,10 +59,36 @@ export const StoreInspectorModal: React.FC<StoreInspectorModalProps> = ({
   const [managerNote, setManagerNote] = useState<string>('');
   const [actionConfirmedMessage, setActionConfirmedMessage] = useState<string | null>(null);
 
+  // Video playback controls
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+
   const isCrit = store.riskLevel === 'critical';
   const isHigh = store.riskLevel === 'high';
 
   const currentPhoto = store.photos[selectedPhotoIndex] || store.photos[0];
+  const isCurrentVideo = currentPhoto?.mediaType === 'video' || (currentPhoto?.videoUrl && (currentPhoto.videoUrl.endsWith('.mp4') || currentPhoto.videoUrl.endsWith('.webm')));
+
+  const handleSeekVideo = (seconds: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = seconds;
+      videoRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play();
+        setIsPlaying(true);
+      }
+    }
+  };
 
   const handleGenerateNotice = async () => {
     setIsGeneratingNotice(true);
@@ -217,66 +251,79 @@ export const StoreInspectorModal: React.FC<StoreInspectorModalProps> = ({
         </div>
 
         {/* Modal Navigation Tabs */}
-        <div className="bg-white px-6 border-b border-slate-200 flex items-center gap-2 overflow-x-auto shrink-0">
-          <button
-            onClick={() => setActiveTab('evidence')}
-            className={`flex items-center gap-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'evidence'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Camera className="w-3.5 h-3.5" />
-            <span>Visual Evidence ({store.photos.length} Photos)</span>
-          </button>
+        <div className="bg-white px-6 border-b border-slate-200 flex items-center justify-between overflow-x-auto shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('evidence')}
+              className={`flex items-center gap-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'evidence'
+                  ? 'border-teal-700 text-teal-800'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>Evidence & Media ({store.photos.length} Items)</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('reviews')}
-            className={`flex items-center gap-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'reviews'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <MessageSquareQuote className="w-3.5 h-3.5" />
-            <span>Review Intelligence ({store.reviews.length} Complaints)</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`flex items-center gap-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'reviews'
+                  ? 'border-teal-700 text-teal-800'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <MessageSquareQuote className="w-3.5 h-3.5" />
+              <span>Customer Reviews ({store.reviews.length})</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'history'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Audit History & Recurrence ({store.inspections.length} Audits)</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex items-center gap-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'history'
+                  ? 'border-teal-700 text-teal-800'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Audit History ({store.inspections.length})</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('pos')}
-            className={`flex items-center gap-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'pos'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Activity className="w-3.5 h-3.5" />
-            <span>POS & Business Signals</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('pos')}
+              className={`flex items-center gap-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'pos'
+                  ? 'border-teal-700 text-teal-800'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>POS Anomalies</span>
+            </button>
 
-          <button
-            onClick={handleGenerateNotice}
-            className={`flex items-center gap-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'cure_notice'
-                ? 'border-red-600 text-red-600'
-                : 'border-transparent text-red-600 hover:text-red-700'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Formal 14-Day Cure Notice</span>
-          </button>
+            <button
+              onClick={handleGenerateNotice}
+              className={`flex items-center gap-1.5 py-3 px-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'cure_notice'
+                  ? 'border-rose-600 text-rose-700'
+                  : 'border-transparent text-rose-600 hover:text-rose-700'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>14-Day Cure Notice</span>
+            </button>
+          </div>
+
+          {onOpenMediaUpload && (
+            <button
+              id="btn-inspector-add-media"
+              onClick={() => onOpenMediaUpload(store.storeNumber)}
+              className="my-1.5 flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Customer Photo / Video</span>
+            </button>
+          )}
         </div>
 
         {/* Modal Body Content */}
@@ -285,22 +332,63 @@ export const StoreInspectorModal: React.FC<StoreInspectorModalProps> = ({
           {activeTab === 'evidence' && (
             <div className="space-y-4">
               {store.photos.length === 0 ? (
-                <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200">
-                  <Camera className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                  <p className="text-slate-700 text-sm font-medium">No photo streams uploaded for this location yet.</p>
-                  <p className="text-slate-500 text-xs mt-1">Use the Computer Vision Lab tab to upload an audit photo.</p>
+                <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                  <Camera className="w-8 h-8 text-slate-400 mx-auto mb-1" />
+                  <p className="text-slate-700 text-sm font-semibold">No photo or video streams uploaded for this location yet.</p>
+                  {onOpenMediaUpload && (
+                    <button
+                      onClick={() => onOpenMediaUpload(store.storeNumber)}
+                      className="inline-flex items-center gap-1.5 bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Upload First Customer Photo or Video</span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                  {/* Left: Image with Bounding Box overlays */}
-                  <div className="lg:col-span-7 space-y-2">
-                    <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-[4/3] group shadow-sm">
-                      <img
-                        src={currentPhoto?.imageUrl}
-                        alt={currentPhoto?.caption}
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
+                  {/* Left: Image / Video with Bounding Box overlays */}
+                  <div className="lg:col-span-7 space-y-2.5">
+                    <div className="relative rounded-2xl overflow-hidden border border-slate-300 bg-slate-950 aspect-[4/3] group shadow-sm flex items-center justify-center">
+                      {isCurrentVideo ? (
+                        <div className="relative w-full h-full flex items-center justify-center">
+                          <video
+                            ref={videoRef}
+                            src={currentPhoto.videoUrl || currentPhoto.imageUrl}
+                            playsInline
+                            loop
+                            onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                            className="w-full h-full object-cover"
+                          />
+
+                          {/* Video player controls bar */}
+                          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-3 flex items-center justify-between text-white text-xs z-20">
+                            <div className="flex items-center gap-2.5">
+                              <button
+                                onClick={togglePlay}
+                                className="p-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white transition-colors"
+                              >
+                                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+                              </button>
+                              <span className="font-mono text-[11px] text-slate-200">
+                                {Math.floor(currentTime)}s / {currentPhoto.durationSec || 15}s
+                              </span>
+                            </div>
+
+                            <span className="bg-teal-900/90 border border-teal-500/60 text-teal-200 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1">
+                              <Film className="w-3 h-3" />
+                              <span>Customer Video Stream</span>
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <img
+                          src={currentPhoto?.imageUrl}
+                          alt={currentPhoto?.caption}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      )}
 
                       {/* Bounding Box Highlights */}
                       {currentPhoto?.detectedViolations.map((v, i) => {
@@ -314,39 +402,85 @@ export const StoreInspectorModal: React.FC<StoreInspectorModalProps> = ({
                               width: `${v.boundingBox.width}%`,
                               height: `${v.boundingBox.height}%`,
                             }}
-                            className="absolute border-2 border-red-500 bg-red-500/20 rounded pointer-events-none transition-all flex flex-col justify-between p-1"
+                            className="absolute border-2 border-rose-500 bg-rose-500/20 rounded pointer-events-none transition-all flex flex-col justify-between p-1 z-10"
                           >
-                            <span className="bg-red-600 text-white font-bold text-[9px] px-1 py-0.2 rounded w-max shadow">
+                            <span className="bg-rose-600 text-white font-bold text-[9px] px-1.5 py-0.5 rounded w-max shadow-sm">
                               {v.label} ({v.confidence}%)
                             </span>
                           </div>
                         );
                       })}
 
-                      <div className="absolute bottom-2 left-2 right-2 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-200 flex items-center justify-between text-xs text-slate-800 shadow-sm">
-                        <span>Zone: <strong className="text-slate-900">{currentPhoto?.zone}</strong></span>
-                        <span>Score: <strong className="text-red-600">{currentPhoto?.overallCleanlinessScore}/100</strong></span>
-                        <span className="text-slate-500">{currentPhoto?.timestamp}</span>
+                      {/* Top Badges */}
+                      <div className="absolute top-2 left-2 right-2 flex items-center justify-between z-20 pointer-events-none">
+                        <span className="bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-1 rounded-md border border-slate-700">
+                          {currentPhoto?.zone}
+                        </span>
+                        {currentPhoto?.submittedBy && (
+                          <span className="bg-teal-900/80 backdrop-blur-xs text-teal-200 text-[10px] font-bold px-2 py-1 rounded-md border border-teal-600">
+                            {currentPhoto.submittedBy}
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    {/* Thumbnail selector */}
+                    {/* Customer Review / Note if submitted by customer */}
+                    {currentPhoto?.customerComment && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-amber-900 font-bold">
+                            <MessageSquareQuote className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Customer Note {currentPhoto.orderNumber ? `(${currentPhoto.orderNumber})` : ''}</span>
+                          </div>
+                          {currentPhoto.customerRating && (
+                            <div className="flex items-center text-amber-500">
+                              {[...Array(currentPhoto.customerRating)].map((_, i) => (
+                                <Star key={i} className="w-3 h-3 fill-current" />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-slate-700 text-[11px] leading-relaxed italic">
+                          "{currentPhoto.customerComment}"
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Thumbnail selector with photo / video indicators */}
                     {store.photos.length > 1 && (
                       <div className="flex gap-2 overflow-x-auto pb-1">
-                        {store.photos.map((p, idx) => (
-                          <button
-                            key={p.id}
-                            onClick={() => setSelectedPhotoIndex(idx)}
-                            className={`relative w-20 h-14 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${
-                              selectedPhotoIndex === idx ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-slate-200 opacity-70 hover:opacity-100'
-                            }`}
-                          >
-                            <img src={p.imageUrl} alt={p.caption} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                            <span className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-[8px] text-center text-white truncate px-1 font-medium">
-                              {p.zone.split('/')[0]}
-                            </span>
-                          </button>
-                        ))}
+                        {store.photos.map((p, idx) => {
+                          const isVid = p.mediaType === 'video' || (p.videoUrl && p.videoUrl.endsWith('.mp4'));
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => {
+                                setSelectedPhotoIndex(idx);
+                                setIsPlaying(false);
+                              }}
+                              className={`relative w-22 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
+                                selectedPhotoIndex === idx
+                                  ? 'border-teal-600 ring-2 ring-teal-200 shadow-sm'
+                                  : 'border-slate-200 opacity-70 hover:opacity-100'
+                              }`}
+                            >
+                              <img
+                                src={p.imageUrl}
+                                alt={p.caption}
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                              />
+                              {isVid && (
+                                <div className="absolute top-1 right-1 p-0.5 rounded bg-black/70 text-white">
+                                  <Video className="w-3 h-3 text-teal-400" />
+                                </div>
+                              )}
+                              <span className="absolute bottom-0 inset-x-0 bg-slate-900/85 text-[8px] text-center text-white truncate px-1 font-medium">
+                                {isVid ? '📹 Video' : p.zone.split('/')[0]}
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -355,9 +489,9 @@ export const StoreInspectorModal: React.FC<StoreInspectorModalProps> = ({
                   <div className="lg:col-span-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                        AI Computer Vision Detections ({currentPhoto?.detectedViolations.length || 0})
+                        {isCurrentVideo ? 'Video Timeline Findings' : 'Vision Detections'} ({currentPhoto?.detectedViolations.length || 0})
                       </h3>
-                      <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold border border-red-200">
+                      <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-bold border border-rose-200">
                         {currentPhoto?.aiStatus === 'flagged' ? 'Infractions Flagged' : 'Passed'}
                       </span>
                     </div>
@@ -366,15 +500,26 @@ export const StoreInspectorModal: React.FC<StoreInspectorModalProps> = ({
                       {currentPhoto?.detectedViolations.map((v) => (
                         <div key={v.id} className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs shadow-xs">
                           <div className="flex items-start justify-between gap-2">
-                            <span className="font-bold text-red-700">{v.label}</span>
-                            <span className="bg-white text-indigo-700 font-mono text-[10px] px-1.5 py-0.5 rounded shrink-0 border border-slate-200 font-bold">
-                              {v.confidence}% conf
-                            </span>
+                            <span className="font-bold text-rose-700">{v.label}</span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {isCurrentVideo && v.timestampSec !== undefined && (
+                                <button
+                                  onClick={() => handleSeekVideo(v.timestampSec!)}
+                                  className="text-[10px] bg-teal-100 hover:bg-teal-200 text-teal-800 font-bold px-1.5 py-0.5 rounded transition-colors flex items-center gap-0.5"
+                                >
+                                  <Play className="w-2.5 h-2.5 fill-current" />
+                                  <span>00:0{v.timestampSec}s</span>
+                                </button>
+                              )}
+                              <span className="bg-white text-teal-800 font-mono text-[10px] px-1.5 py-0.5 rounded border border-slate-200 font-bold">
+                                {v.confidence}% conf
+                              </span>
+                            </div>
                           </div>
                           <p className="text-slate-600 text-[11px] leading-relaxed">{v.evidenceDescription}</p>
                           <div className="pt-1.5 border-t border-slate-200 flex items-center justify-between text-[10px]">
                             <span className="text-amber-800 font-bold">{v.standardClause}</span>
-                            <span className="uppercase font-extrabold text-red-600">{v.severity}</span>
+                            <span className="uppercase font-extrabold text-rose-600">{v.severity}</span>
                           </div>
                         </div>
                       ))}

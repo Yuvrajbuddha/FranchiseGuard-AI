@@ -5,7 +5,10 @@ import {
   CheckCircle,
   Building2,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  Camera,
+  Video,
+  Plus
 } from 'lucide-react';
 import { FranchiseBrand } from '../types/franchise';
 
@@ -22,6 +25,7 @@ interface NavbarProps {
   brands: FranchiseBrand[];
   criticalCount: number;
   openStoreInspector: (storeNumber: number) => void;
+  openCustomerUpload?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -32,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   brands,
   criticalCount,
   openStoreInspector,
+  openCustomerUpload,
 }) => {
   const [brandDropdownOpen, setBrandDropdownOpen] = React.useState(false);
 
@@ -55,14 +60,27 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="text-slate-400">{selectedBrand.name} ({selectedBrand.headquarters})</span>
         </div>
 
-        <button 
-          id="nav-quick-spotlight-store247"
-          onClick={() => openStoreInspector(247)}
-          className="text-rose-300 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/80 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-          <span>Spotlight Store #247 (Hazratganj)</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {openCustomerUpload && (
+            <button
+              id="nav-btn-customer-upload"
+              onClick={openCustomerUpload}
+              className="text-teal-300 bg-teal-950/80 hover:bg-teal-900 border border-teal-700/70 px-2.5 py-1 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
+            >
+              <Camera className="w-3.5 h-3.5 text-teal-400" />
+              <span>+ Add Customer Photo / Video</span>
+            </button>
+          )}
+
+          <button 
+            id="nav-quick-spotlight-store247"
+            onClick={() => openStoreInspector(247)}
+            className="text-rose-300 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/80 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+            <span>Spotlight Store #247</span>
+          </button>
+        </div>
       </div>
 
       {/* Main navigation header */}

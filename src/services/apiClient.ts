@@ -10,6 +10,7 @@ export interface PhotoAnalysisResult {
     severity: 'low' | 'medium' | 'high' | 'critical';
     evidenceDescription: string;
     standardClause: string;
+    timestampSec?: number;
     boundingBox?: { x: number; y: number; width: number; height: number };
   }>;
 }
@@ -34,10 +35,13 @@ export interface RiskExplanationResult {
 export async function analyzeStorePhoto(payload: {
   imageBase64?: string;
   imageUrl?: string;
+  videoUrl?: string;
+  mediaType?: 'image' | 'video';
   mimeType?: string;
   zone?: string;
   storeNumber?: number;
   caption?: string;
+  customerFeedback?: string;
 }): Promise<PhotoAnalysisResult> {
   try {
     const res = await fetch('/api/ai/analyze-photo', {
@@ -49,10 +53,11 @@ export async function analyzeStorePhoto(payload: {
     return await res.json();
   } catch (err) {
     console.warn('API error, falling back locally:', err);
+    const isVideo = payload.mediaType === 'video' || (payload.videoUrl && payload.videoUrl.endsWith('.mp4'));
     return {
       overallCleanlinessScore: 45,
       aiStatus: 'flagged',
-      summary: `Computer Vision Agent flagged 2 non-compliance items in Store #${payload.storeNumber || 247} (${payload.zone || 'Kitchen'}). Floor grease accumulation & missing headwear identified.`,
+      summary: `Multimodal Agent analyzed ${isVideo ? 'customer video recording' : 'customer photo'} for Store #${payload.storeNumber || 247} (${payload.zone || 'Kitchen'}). Flagged 2 non-compliance items.`,
       detectedViolations: [
         {
           id: 'v-fb-1',
@@ -60,6 +65,7 @@ export async function analyzeStorePhoto(payload: {
           label: 'Excessive Floor Grease Build-up & Oil Residue',
           confidence: 94.2,
           severity: 'critical',
+          timestampSec: isVideo ? 3 : undefined,
           evidenceDescription: 'Heavy oil accumulation along tile line beneath deep fryer station. Poses slip and sanitation hazard.',
           standardClause: 'STD-HYG-402 (Floor & Food Contact Sanitation)',
           boundingBox: { x: 26, y: 62, width: 44, height: 28 },
@@ -70,6 +76,7 @@ export async function analyzeStorePhoto(payload: {
           label: 'Prep Worker Missing Standard Hairnet / Headgear',
           confidence: 91.8,
           severity: 'high',
+          timestampSec: isVideo ? 8 : undefined,
           evidenceDescription: 'Active food handler operating prep table without approved FreshBite hair restraint.',
           standardClause: 'STD-UNI-107 (Staff Attire & Hairnets)',
           boundingBox: { x: 55, y: 15, width: 22, height: 35 },
@@ -78,6 +85,8 @@ export async function analyzeStorePhoto(payload: {
     };
   }
 }
+
+export const analyzeStoreMedia = analyzeStorePhoto;
 
 export async function analyzeCustomerReview(payload: {
   reviewText: string;

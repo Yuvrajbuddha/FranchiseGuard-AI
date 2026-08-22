@@ -8,7 +8,10 @@ import {
   Search,
   Eye,
   MapPin,
-  Sparkles
+  Sparkles,
+  Camera,
+  Video,
+  Plus
 } from 'lucide-react';
 import { FranchiseStore, SystemicPattern, FranchiseBrand } from '../types/franchise';
 
@@ -21,6 +24,7 @@ interface DashboardOverviewProps {
   onNavigateTab: (tab: any) => void;
   onTriggerFleetScan: () => void;
   isScanning: boolean;
+  onOpenCustomerUpload?: () => void;
 }
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
@@ -30,6 +34,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onNavigateTab,
   onTriggerFleetScan,
   isScanning,
+  onOpenCustomerUpload,
 }) => {
   const [searchQuery, setSearchQuery] = React.useState<string>('');
   const [filterType, setFilterType] = React.useState<'all' | 'critical'>('all');
@@ -63,11 +68,22 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               Franchise Compliance Overview
             </h1>
             <p className="text-emerald-100/80 text-sm mt-1 max-w-lg">
-              Continuous AI monitoring for store cleanliness, brand standards, and customer reviews across all Indian locations.
+              Continuous AI monitoring for store cleanliness, brand standards, customer photos, and video audits across all locations.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {onOpenCustomerUpload && (
+              <button
+                id="btn-dashboard-customer-upload"
+                onClick={onOpenCustomerUpload}
+                className="flex items-center gap-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-200 border border-teal-400/40 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs"
+              >
+                <Camera className="w-4 h-4 text-teal-300" />
+                <span>+ Add Photo / Video</span>
+              </button>
+            )}
+
             <button
               id="btn-trigger-fleet-scan"
               onClick={onTriggerFleetScan}
@@ -88,7 +104,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               className="flex items-center gap-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-400/30 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors"
             >
               <span>Spotlight Store #247</span>
-              <ArrowRight className="w-3.5 h-3.5 text-rose-300" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

@@ -9,13 +9,16 @@ import {
   FranchiseStore, 
   FranchiseBrand, 
   SystemicPattern, 
-  AuditLogEntry 
+  AuditLogEntry,
+  StorePhotoAudit,
+  CustomerReview 
 } from './types/franchise';
 import { Navbar, ActiveTab } from './components/Navbar';
 import { DashboardOverview } from './components/DashboardOverview';
 import { StoreInspectorModal } from './components/StoreInspectorModal';
 import { StoreListAuditor } from './components/StoreListAuditor';
 import { HumanInTheLoopCenter } from './components/HumanInTheLoopCenter';
+import { CustomerMediaUploadModal } from './components/CustomerMediaUploadModal';
 import confetti from 'canvas-confetti';
 
 export function App() {
@@ -29,6 +32,10 @@ export function App() {
   const [isScanningFleet, setIsScanningFleet] = useState<boolean>(false);
   const [fleetScanToast, setFleetScanToast] = useState<string | null>(null);
 
+  // Customer Media Upload Modal State
+  const [isCustomerUploadOpen, setIsCustomerUploadOpen] = useState<boolean>(false);
+  const [uploadTargetStoreNumber, setUploadTargetStoreNumber] = useState<number>(247);
+
   const selectedStore = stores.find((s) => s.storeNumber === selectedStoreNumber) || null;
   const criticalCount = stores.filter((s) => s.riskLevel === 'critical').length;
 
@@ -40,11 +47,83 @@ export function App() {
     setSelectedStoreNumber(null);
   };
 
+  const handleOpenCustomerUpload = (storeNum?: number) => {
+    setUploadTargetStoreNumber(storeNum || selectedStoreNumber || 247);
+    setIsCustomerUploadOpen(true);
+  };
+
+  const handleCustomerMediaSubmitted = (
+    storeNumber: number,
+    newMedia: StorePhotoAudit,
+    customerReviewText?: string,
+    rating?: number
+  ) => {
+    setStores((prevStores) =>
+      prevStores.map((s) => {
+        if (s.storeNumber === storeNumber) {
+          const hasViolations = newMedia.detectedViolations.length > 0;
+          const updatedPhotos = [newMedia, ...s.photos];
+          
+          let updatedReviews = s.reviews;
+          if (customerReviewText) {
+            const newRev: CustomerReview = {
+              id: `rev-cust-${Date.now()}`,
+              timestamp: new Date().toISOString().substring(0, 10),
+              source: 'Zomato / Customer App',
+              rating: rating || 1,
+              text: customerReviewText,
+              sentiment: (rating || 1) <= 2 ? 'negative' : (rating || 1) === 3 ? 'neutral' : 'positive',
+              sentimentScore: (rating || 1) <= 2 ? -0.85 : 0.75,
+              extractedCategory: newMedia.zone.includes('Food') ? 'Food Quality' : 'Cleanliness',
+              severity: (rating || 1) === 1 ? 'critical' : 'high',
+              isRecurringIssue: true,
+            };
+            updatedReviews = [newRev, ...s.reviews];
+          }
+
+          const scoreIncrement = hasViolations ? 15 : 0;
+          const newRiskScore = Math.min(99, s.riskScore + scoreIncrement);
+          const newRiskLevel = newRiskScore >= 80 ? 'critical' : newRiskScore >= 60 ? 'high' : s.riskLevel;
+
+          return {
+            ...s,
+            photos: updatedPhotos,
+            reviews: updatedReviews,
+            riskScore: newRiskScore,
+            riskLevel: newRiskLevel,
+            recentViolationsCount: s.recentViolationsCount + newMedia.detectedViolations.length,
+            negativeReviewsCount30d: (rating && rating <= 2) ? s.negativeReviewsCount30d + 1 : s.negativeReviewsCount30d,
+            humanReviewStatus: hasViolations ? 'Pending Review' : s.humanReviewStatus,
+          };
+        }
+        return s;
+      })
+    );
+
+    // Add entry to audit log
+    const newLog: AuditLogEntry = {
+      id: `log-${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      storeNumber,
+      actionTaken: `Customer ${newMedia.mediaType === 'video' ? 'Video Evidence' : 'Photo Evidence'} Uploaded`,
+      decisionType: newMedia.detectedViolations.length > 0 ? 'Approved' : 'Dismissed',
+      actor: newMedia.submittedBy || 'Verified Customer',
+      notes: customerReviewText || 'Customer uploaded visual audit evidence to store record.',
+      aiRecommendation: newMedia.detectedViolations.length > 0
+        ? `Computer Vision flagged ${newMedia.detectedViolations.length} compliance infractions. Priority review scheduled.`
+        : 'Media passed AI cleanliness baseline check.',
+    };
+    setAuditLogs((prev) => [newLog, ...prev]);
+
+    setFleetScanToast(`Customer ${newMedia.mediaType === 'video' ? 'Video' : 'Photo'} successfully submitted and analyzed for Store #${storeNumber}!`);
+    setTimeout(() => setFleetScanToast(null), 5000);
+  };
+
   const handleTriggerFleetScan = () => {
     setIsScanningFleet(true);
     setTimeout(() => {
       setIsScanningFleet(false);
-      setFleetScanToast('Fleet scan complete: 500 store vision feeds and customer reviews verified.');
+      setFleetScanToast('Fleet scan complete: 500 store vision feeds, customer photos, and video logs verified.');
       confetti({
         particleCount: 35,
         spread: 50,
@@ -142,11 +221,12 @@ export function App() {
         brands={FRANCHISE_BRANDS}
         criticalCount={criticalCount}
         openStoreInspector={handleOpenStoreInspector}
+        openCustomerUpload={() => handleOpenCustomerUpload(247)}
       />
 
       {/* Fleet Scan Global Toast */}
       {fleetScanToast && (
-        <div className="bg-teal-700 text-white px-4 py-2 text-xs font-semibold text-center border-b border-teal-800 flex items-center justify-center gap-2 shadow-xs animate-fadeIn">
+        <div className="bg-teal-700 text-white px-4 py-2.5 text-xs font-semibold text-center border-b border-teal-800 flex items-center justify-center gap-2 shadow-xs animate-fadeIn">
           <span>✨ {fleetScanToast}</span>
         </div>
       )}
@@ -162,6 +242,7 @@ export function App() {
             onNavigateTab={setActiveTab}
             onTriggerFleetScan={handleTriggerFleetScan}
             isScanning={isScanningFleet}
+            onOpenCustomerUpload={() => handleOpenCustomerUpload(247)}
           />
         )}
 
@@ -169,6 +250,7 @@ export function App() {
           <StoreListAuditor
             stores={stores}
             onSelectStore={handleOpenStoreInspector}
+            onOpenMediaUpload={handleOpenCustomerUpload}
           />
         )}
 
@@ -191,8 +273,18 @@ export function App() {
           onApproveAction={handleApproveAction}
           onRejectAction={handleRejectAction}
           onInvestigateAction={handleInvestigateAction}
+          onOpenMediaUpload={handleOpenCustomerUpload}
         />
       )}
+
+      {/* Customer Photo & Video Upload Modal */}
+      <CustomerMediaUploadModal
+        isOpen={isCustomerUploadOpen}
+        onClose={() => setIsCustomerUploadOpen(false)}
+        stores={stores}
+        preselectedStoreNumber={uploadTargetStoreNumber}
+        onMediaSubmitted={handleCustomerMediaSubmitted}
+      />
 
       {/* Persistent Clean Footer */}
       <footer className="bg-white border-t border-slate-200 py-5 text-center text-xs text-slate-500 mt-auto">
@@ -203,6 +295,13 @@ export function App() {
             <span>Continuous Compliance Platform</span>
           </div>
           <div className="flex items-center gap-4 text-slate-500">
+            <button
+              onClick={() => handleOpenCustomerUpload(247)}
+              className="text-teal-700 hover:text-teal-800 font-bold transition-colors"
+            >
+              + Add Customer Photo / Video
+            </button>
+            <span>•</span>
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               Powered by Gemini 3.7 Vision & NLP
