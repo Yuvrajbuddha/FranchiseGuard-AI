@@ -156,7 +156,7 @@ export const ReviewIntelligenceHub: React.FC = () => {
               <Sparkles className="w-4 h-4 text-indigo-600" />
               <h2 className="text-sm font-bold text-slate-900">Live NLP Review Analyzer</h2>
             </div>
-            <span className="text-[11px] text-slate-500 font-medium">Gemini 3.7 Flash NLP</span>
+            <span className="text-[11px] text-slate-500 font-medium">NLP Intelligence Engine</span>
           </div>
 
           <div className="space-y-2">

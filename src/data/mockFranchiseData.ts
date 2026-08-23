@@ -1034,3 +1034,68 @@ export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
 ];
 
 export const MOCK_AUDIT_LOGS = INITIAL_AUDIT_LOGS;
+
+export interface DemoUserAccount {
+  id: string;
+  email: string;
+  password: string;
+  name: string;
+  role: 'owner' | 'manager' | 'franchisee' | 'customer';
+  title: string;
+  avatar: string;
+  assignedStoreNumber?: number;
+  assignedRegion?: string;
+  description: string;
+  badge: string;
+}
+
+export const DEMO_USERS: DemoUserAccount[] = [
+  {
+    id: 'user-owner',
+    email: 'owner@franchiseguard.com',
+    password: 'owner123',
+    name: 'Yash Gupta',
+    role: 'owner',
+    title: 'Brand Chairman & Franchise Owner',
+    avatar: '',
+    assignedRegion: 'All India (500 Stores)',
+    description: 'Executive view with graphical analytics, bar graphs, regional health distribution, revenue at risk, and fleet-wide charts.',
+    badge: 'Executive Access',
+  },
+  {
+    id: 'user-manager',
+    email: 'manager@franchiseguard.com',
+    password: 'manager123',
+    name: 'Swapnil Tripathi',
+    role: 'manager',
+    title: 'Regional Operations & Compliance Director',
+    avatar: '',
+    assignedRegion: 'North & Central India Hub',
+    description: 'Upload and audit video footage, inspect store photos, analyze customer reviews, approve AI infractions, and issue cure notices.',
+    badge: 'Field Operations',
+  },
+  {
+    id: 'user-franchisee',
+    email: 'franchisee247@freshbite.com',
+    password: 'store123',
+    name: 'Yuvraj Buddha',
+    role: 'franchisee',
+    title: 'Franchisee Operator - Store #247 (Hazratganj)',
+    avatar: '',
+    assignedStoreNumber: 247,
+    assignedRegion: 'Hazratganj, Lucknow (UP)',
+    description: 'Store operator portal to monitor store hygiene score, cure notices, customer reviews, and upload proof-of-fix remediation photos.',
+    badge: 'Store Operator',
+  },
+  {
+    id: 'user-customer',
+    email: 'customer@diner.com',
+    password: 'guest123',
+    name: 'Urmila Tripathi',
+    role: 'customer',
+    title: 'Diner & Verified Food Safety Reviewer',
+    avatar: '',
+    description: 'Public customer interface to browse verified store hygiene ratings, submit reviews, and upload dining photos/videos.',
+    badge: 'Public Portal',
+  },
+];

@@ -182,3 +182,16 @@ export interface FranchiseBrand {
   headquarters: string;
   complianceTargetPct: number;
 }
+
+export type UserRole = 'owner' | 'manager' | 'franchisee' | 'customer';
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
+  title: string;
+  assignedStoreNumber?: number; // For franchisee role
+  assignedRegion?: string; // For manager role
+}

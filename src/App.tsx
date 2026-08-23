@@ -3,7 +3,8 @@ import {
   FRANCHISE_BRANDS, 
   generateFleetStores, 
   MOCK_SYSTEMIC_PATTERNS, 
-  MOCK_AUDIT_LOGS 
+  MOCK_AUDIT_LOGS,
+  DEMO_USERS
 } from './data/mockFranchiseData';
 import { 
   FranchiseStore, 
@@ -11,10 +12,16 @@ import {
   SystemicPattern, 
   AuditLogEntry,
   StorePhotoAudit,
-  CustomerReview 
+  CustomerReview,
+  AuthUser,
+  UserRole
 } from './types/franchise';
 import { Navbar, ActiveTab } from './components/Navbar';
-import { DashboardOverview } from './components/DashboardOverview';
+import { LoginPage } from './components/LoginPage';
+import { OwnerAnalyticsDashboard } from './components/OwnerAnalyticsDashboard';
+import { ManagerPortal } from './components/ManagerPortal';
+import { FranchiseePortal } from './components/FranchiseePortal';
+import { CustomerPortal } from './components/CustomerPortal';
 import { StoreInspectorModal } from './components/StoreInspectorModal';
 import { StoreListAuditor } from './components/StoreListAuditor';
 import { HumanInTheLoopCenter } from './components/HumanInTheLoopCenter';
@@ -22,12 +29,15 @@ import { CustomerMediaUploadModal } from './components/CustomerMediaUploadModal'
 import confetti from 'canvas-confetti';
 
 export function App() {
+  // Current Authenticated User (null = Shows Login Screen First)
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+
   const [selectedBrand, setSelectedBrand] = useState<FranchiseBrand>(FRANCHISE_BRANDS[0]);
   const [stores, setStores] = useState<FranchiseStore[]>(() => generateFleetStores());
   const [systemicPatterns, setSystemicPatterns] = useState<SystemicPattern[]>(MOCK_SYSTEMIC_PATTERNS);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(MOCK_AUDIT_LOGS);
   
-  const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('owner_analytics');
   const [selectedStoreNumber, setSelectedStoreNumber] = useState<number | null>(null);
   const [isScanningFleet, setIsScanningFleet] = useState<boolean>(false);
   const [fleetScanToast, setFleetScanToast] = useState<string | null>(null);
@@ -38,6 +48,39 @@ export function App() {
 
   const selectedStore = stores.find((s) => s.storeNumber === selectedStoreNumber) || null;
   const criticalCount = stores.filter((s) => s.riskLevel === 'critical').length;
+
+  // Franchisee's assigned store (default to #247)
+  const franchiseeStoreNumber = currentUser?.assignedStoreNumber || 247;
+  const franchiseeStore = stores.find((s) => s.storeNumber === franchiseeStoreNumber) || stores[0];
+
+  const handleLogin = (user: AuthUser) => {
+    setCurrentUser(user);
+    // Route to role-specific home tab
+    switch (user.role) {
+      case 'owner':
+        setActiveTab('owner_analytics');
+        break;
+      case 'manager':
+        setActiveTab('manager_portal');
+        break;
+      case 'franchisee':
+        setActiveTab('franchisee_portal');
+        break;
+      case 'customer':
+      default:
+        setActiveTab('customer_portal');
+        break;
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setSelectedStoreNumber(null);
+  };
+
+  const handleSwitchUser = (user: AuthUser) => {
+    handleLogin(user);
+  };
 
   const handleOpenStoreInspector = (storeNum: number) => {
     setSelectedStoreNumber(storeNum);
@@ -151,7 +194,7 @@ export function App() {
       storeNumber,
       actionTaken: `Approved: ${actionType.replace('_', ' ').toUpperCase()}`,
       decisionType: 'Approved',
-      actor: 'Franchise Compliance Director',
+      actor: currentUser?.name || 'Franchise Compliance Director',
       notes: note || 'Approved for immediate field dispatch.',
       aiRecommendation: 'Physical inspection dispatched following AI risk flag.',
     };
@@ -178,7 +221,7 @@ export function App() {
       storeNumber,
       actionTaken: 'Flag Dismissed by Franchise Manager',
       decisionType: 'Rejected',
-      actor: 'Franchise Operations Manager',
+      actor: currentUser?.name || 'Franchise Operations Manager',
       notes: note || 'Resolved locally or non-violation confirmed.',
       aiRecommendation: 'Dismissed after review by store supervisor.',
     };
@@ -203,19 +246,27 @@ export function App() {
       storeNumber,
       actionTaken: 'Clarification & Photo Evidence Requested',
       decisionType: 'Approved',
-      actor: 'Franchise Field Operations',
+      actor: currentUser?.name || 'Franchise Field Operations',
       notes: note || 'Requested supplementary photos and POS transaction logs.',
       aiRecommendation: 'Supplementary audit evidence requested.',
     };
     setAuditLogs([newLog, ...auditLogs]);
   };
 
+  // If not logged in, render the Login Page First!
+  if (!currentUser) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans flex flex-col selection:bg-teal-700 selection:text-white">
-      {/* Navigation */}
+      {/* Navigation Bar */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        currentUser={currentUser}
+        onSwitchUser={handleSwitchUser}
+        onLogout={handleLogout}
         selectedBrand={selectedBrand}
         setSelectedBrand={setSelectedBrand}
         brands={FRANCHISE_BRANDS}
@@ -233,19 +284,50 @@ export function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 pt-6 pb-12">
-        {activeTab === 'dashboard' && (
-          <DashboardOverview
+        
+        {/* 1. Franchise Owner View: Graphical Representation & Bar Charts */}
+        {activeTab === 'owner_analytics' && (
+          <OwnerAnalyticsDashboard
             stores={stores}
-            systemicPatterns={systemicPatterns}
             brand={selectedBrand}
+            systemicPatterns={systemicPatterns}
             onSelectStore={handleOpenStoreInspector}
-            onNavigateTab={setActiveTab}
             onTriggerFleetScan={handleTriggerFleetScan}
             isScanning={isScanningFleet}
-            onOpenCustomerUpload={() => handleOpenCustomerUpload(247)}
           />
         )}
 
+        {/* 2. Operations Manager View: Upload Videos & Customer Reviews */}
+        {activeTab === 'manager_portal' && (
+          <ManagerPortal
+            stores={stores}
+            onSelectStore={handleOpenStoreInspector}
+            onOpenMediaUpload={handleOpenCustomerUpload}
+            onApproveAction={handleApproveAction}
+            onRejectAction={handleRejectAction}
+            onInvestigateAction={handleInvestigateAction}
+          />
+        )}
+
+        {/* 3. Franchisee Operator View: Store Status & Proof of Fix */}
+        {activeTab === 'franchisee_portal' && (
+          <FranchiseePortal
+            store={franchiseeStore}
+            onOpenMediaUpload={handleOpenCustomerUpload}
+            onSelectStore={handleOpenStoreInspector}
+          />
+        )}
+
+        {/* 4. Normal User / Customer Interface: Food Safety & Reviews */}
+        {activeTab === 'customer_portal' && (
+          <CustomerPortal
+            stores={stores}
+            onOpenCustomerUpload={handleOpenCustomerUpload}
+            onSelectStore={handleOpenStoreInspector}
+          />
+        )}
+
+        {/* 5. Full Store Fleet Matrix Tab */}
         {activeTab === 'stores' && (
           <StoreListAuditor
             stores={stores}
@@ -254,6 +336,7 @@ export function App() {
           />
         )}
 
+        {/* 6. Human in the Loop Governance Center */}
         {activeTab === 'human_loop' && (
           <HumanInTheLoopCenter
             stores={stores}
@@ -292,7 +375,7 @@ export function App() {
           <div className="flex items-center gap-2">
             <span className="font-bold text-slate-800">FranchiseGuard AI</span>
             <span>•</span>
-            <span>Continuous Compliance Platform</span>
+            <span>Active Role: <strong className="text-teal-700 capitalize">{currentUser.role} ({currentUser.name})</strong></span>
           </div>
           <div className="flex items-center gap-4 text-slate-500">
             <button
@@ -302,10 +385,12 @@ export function App() {
               + Add Customer Photo / Video
             </button>
             <span>•</span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              Powered by Gemini 3.7 Vision & NLP
-            </span>
+            <button
+              onClick={handleLogout}
+              className="text-rose-600 hover:text-rose-700 font-semibold transition-colors"
+            >
+              Sign Out
+            </button>
             <span>•</span>
             <button onClick={() => handleOpenStoreInspector(247)} className="hover:text-teal-700 font-semibold transition-colors">
               Inspect Store #247 (Hazratganj)

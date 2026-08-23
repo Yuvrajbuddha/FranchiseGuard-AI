@@ -347,7 +347,7 @@ export const LiveDemoWalkthrough: React.FC<LiveDemoWalkthroughProps> = ({
               <span className="text-xs font-extrabold uppercase text-indigo-700">Step 5 of 7</span>
               <h2 className="text-lg font-bold text-slate-900">AI Executive Explanation & Recommendation</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Gemini 3.7 synthesizes natural language rationale for executive franchise leadership.
+                AI synthesizes natural language rationale for executive franchise leadership.
               </p>
             </div>
 

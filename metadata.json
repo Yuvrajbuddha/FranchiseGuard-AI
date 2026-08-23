@@ -1,6 +1,6 @@
 {
   "name": "FranchiseGuard AI",
-  "description": "AI-Powered Franchise Compliance, Risk Monitoring & Standards Audit Platform with Customer Photo & Video Uploads, Computer Vision, Review NLP, and Human-in-the-Loop Governance.",
+  "description": "Multi-Role AI-Powered Franchise Compliance & Analytics Platform with Role-Based Portals for Franchise Owners, Operations Managers, Franchisee Operators, and Customer Dining Portals.",
   "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -430,7 +430,7 @@ export const CustomerMediaUploadModal: React.FC<CustomerMediaUploadModalProps> =
                 {isAnalyzing && (
                   <div className="absolute inset-0 bg-teal-950/70 backdrop-blur-xs flex flex-col items-center justify-center text-white space-y-2 animate-fadeIn z-20">
                     <div className="w-10 h-10 border-2 border-teal-400 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-xs font-bold tracking-wide">Gemini 3.7 Vision & Video Audit in Progress...</span>
+                    <span className="text-xs font-bold tracking-wide">AI Vision & Video Audit in Progress...</span>
                     <span className="text-[10px] text-teal-200">Analyzing frame sanitation, objects, and hygiene...</span>
                   </div>
                 )}

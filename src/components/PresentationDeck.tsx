@@ -133,7 +133,7 @@ const SLIDES: Slide[] = [
     number: 9,
     title: 'Multimodal AI Vision & NLP Pipeline',
     category: 'Technology',
-    headline: 'Powered by Gemini 3.7 Vision & Multimodal Reasoning',
+    headline: 'Powered by Multimodal AI Vision & Reasoning',
     bullets: [
       'Computer Vision identifies tile grease, uniform lapses, signage outages with 94%+ confidence.',
       'Extracts spatial bounding boxes for visual verification and franchisee clarity.',
@@ -274,7 +274,7 @@ const SLIDES: Slide[] = [
     category: 'Engineering',
     headline: 'Enterprise-Grade Security & Containerized Scalability',
     bullets: [
-      'Backend: Node.js / Express with Gemini 3.7 Multimodal SDK.',
+      'Backend: Node.js / Express with Multimodal AI Integration.',
       'Frontend: React 19, Vite, Tailwind CSS with Recharts & responsive layout.',
       'Security: SOC2 compliant architecture, encrypted storage, RBAC authentication.',
       'Throughput: 10,000+ photo inferences per minute with sub-second scoring.',
